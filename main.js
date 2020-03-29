@@ -11,6 +11,7 @@ logger.level = "debug";
 let bot_token;
 
 // Checks if there's an environmental variable configured.
+// Super hack shit I know D:
 if (process.env.BOT_TOKEN) {
     bot_token = process.env.BOT_TOKEN;
 } else {
@@ -18,6 +19,7 @@ if (process.env.BOT_TOKEN) {
 }
 
 // Initialize Discord Bot
+// Docs: https://izy521.gitbooks.io/discord-io/content/Methods/Client.html
 var bot = new Discord.Client({
     // token: process.env.BOT_TOKEN,
     // token: auth.token,
@@ -25,6 +27,7 @@ var bot = new Discord.Client({
     autorun: true
 });
 
+// TODO: A universal get cases function
 function getPACases(user, userID, channelID, message, evt) {
     let date_ob = new Date();
     let date = ("0" + date_ob.getDate()).slice(-2);
@@ -116,9 +119,6 @@ bot.on("ready", function(evt) {
 });
 
 bot.on("message", function(user, userID, channelID, message, evt) {
-    // logger.info(user, userID);
-    // logger.info(evt);
-
     if (user == "CoronaBot") {
         return;
     }
@@ -130,6 +130,9 @@ bot.on("message", function(user, userID, channelID, message, evt) {
         logger.info(args[0]);
 
         args = args.splice(1);
+
+        // TODO: make it work for every state.
+        // TODO: Center county cases
         switch (cmd) {
             // !ping
             case "commands":
