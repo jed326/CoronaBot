@@ -1,18 +1,27 @@
 const Discord = require("discord.io");
 const logger = require("winston");
-// const auth = require("./auth.json");
 const request = require("request");
 
-// Configure logger settings
 logger.remove(logger.transports.Console);
 logger.add(new logger.transports.Console(), {
     colorize: true
 });
 logger.level = "debug";
 
+let bot_token;
+
+// Checks if there's an environmental variable configured.
+if (process.env.BOT_TOKEN) {
+    bot_token = process.env.BOT_TOKEN;
+} else {
+    bot_token = require("./auth.json").token;
+}
+
 // Initialize Discord Bot
 var bot = new Discord.Client({
-    token: process.env.BOT_TOKEN,
+    // token: process.env.BOT_TOKEN,
+    // token: auth.token,
+    token: bot_token,
     autorun: true
 });
 
