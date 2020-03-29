@@ -1,6 +1,6 @@
 const Discord = require("discord.io");
 const logger = require("winston");
-const auth = require("./auth.json");
+// const auth = require("./auth.json");
 const request = require("request");
 
 // Configure logger settings
