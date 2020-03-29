@@ -27,89 +27,62 @@ var bot = new Discord.Client({
     autorun: true
 });
 
-// TODO: A universal get cases function
-function getPACases(user, userID, channelID, message, evt) {
+function getCases(user, userID, channelID, message, evt, loc) {
     let date_ob = new Date();
-    let date = ("0" + date_ob.getDate()).slice(-2);
-    let month = ("0" + (date_ob.getMonth() + 1)).slice(-2);
-    let year = date_ob.getFullYear();
-    let hours = date_ob.getHours();
-    let minutes = date_ob.getMinutes();
-    let seconds = date_ob.getSeconds();
     let timestring =
-        month +
+        ("0" + (date_ob.getMonth() + 1)).slice(-2) +
         "-" +
-        date +
+        ("0" + date_ob.getDate()).slice(-2) +
         "-" +
-        year +
+        date_ob.getFullYear() +
         " " +
-        hours +
+        date_ob.getHours() +
         ":" +
-        minutes +
+        date_ob.getMinutes() +
         ":" +
-        seconds;
+        date_ob.getSeconds();
 
-    request(
-        "https://covidtracking.com/api/states",
-        { json: true },
-        (err, res, body) => {
-            if (err) {
-                return logger.error(err);
-            } else {
-                // logger.info(body[38]);
-                var data = body[38];
-                bot.sendMessage({
-                    to: channelID,
-                    message:
-                        `...\n` +
-                        `As of ${timestring} there are **${data.positive}** positive COVID19 cases in **${data.state}**.` +
-                        ` **${data.totalTestResults}** tests have been performed.`
-                });
+    let route, index;
+
+    if (loc == "US") {
+        route = "https://covidtracking.com/api/us";
+        index = 0;
+    } else if (loc.length == 2) {
+        route = "https://covidtracking.com/api/states";
+        index = -1;
+    }
+
+    request(route, { json: true }, (err, res, body) => {
+        if (err) {
+            return logger.error(err);
+        } else {
+            if (index == -1) {
+                // Maybe store this in a hash map instead of looping idk
+                var i;
+                for (i = 0; i < body.length; i++) {
+                    if (body[i].state == loc) {
+                        index = i;
+                        break;
+                    }
+                }
+                if (index == -1) {
+                    bot.sendMessage({
+                        to: channelID,
+                        message: "Please use a valid 2-digit State Code"
+                    });
+                    return;
+                }
             }
+            var data = body[index];
+            bot.sendMessage({
+                to: channelID,
+                message:
+                    `...\n` +
+                    `As of ${timestring} there are **${data.positive}** positive COVID19 cases in ${loc}.` +
+                    ` **${data.totalTestResults}** tests have been performed.`
+            });
         }
-    );
-}
-
-function getUSCases(user, userID, channelID, message, evt) {
-    let date_ob = new Date();
-    let date = ("0" + date_ob.getDate()).slice(-2);
-    let month = ("0" + (date_ob.getMonth() + 1)).slice(-2);
-    let year = date_ob.getFullYear();
-    let hours = date_ob.getHours();
-    let minutes = date_ob.getMinutes();
-    let seconds = date_ob.getSeconds();
-    let timestring =
-        month +
-        "-" +
-        date +
-        "-" +
-        year +
-        " " +
-        hours +
-        ":" +
-        minutes +
-        ":" +
-        seconds;
-
-    request(
-        "https://covidtracking.com/api/us",
-        { json: true },
-        (err, res, body) => {
-            if (err) {
-                return logger.error(err);
-            } else {
-                // logger.info(body);
-                var data = body[0];
-                bot.sendMessage({
-                    to: channelID,
-                    message:
-                        `...\n` +
-                        `As of ${timestring} there are **${data.positive}** positive COVID19 cases in the US.` +
-                        ` **${data.totalTestResults}** tests have been performed.`
-                });
-            }
-        }
-    );
+    });
 }
 
 bot.on("ready", function(evt) {
@@ -131,38 +104,22 @@ bot.on("message", function(user, userID, channelID, message, evt) {
 
         args = args.splice(1);
 
-        // TODO: make it work for every state.
         // TODO: Center county cases
-        switch (cmd) {
-            // !ping
-            case "commands":
-                bot.sendMessage({
-                    to: channelID,
-                    message:
-                        "Here are the commands:\n" +
-                        "**!ping**:     pong\n" +
-                        "**!cases**:    Get the number of Covid19 cases in the USA"
-                });
-                break;
-
-            case "ping":
-                bot.sendMessage({
-                    to: channelID,
-                    message: "Pong!"
-                });
-                break;
-
-            case "cases":
-                getUSCases(user, userID, channelID, message, evt);
-                break;
-
-            case "PA":
-                getPACases(user, userID, channelID, message, evt);
-                break;
-
-            case "pa":
-                getPACases(user, userID, channelID, message, evt);
-                break;
+        // This should probably be a switch statement but I suck at coding
+        if (cmd == "commands" || cmd == "help") {
+            bot.sendMessage({
+                to: channelID,
+                message:
+                    "Here are the commands:\n" +
+                    "**!cases**:    Get the number of COVID19 cases in the USA\n" +
+                    "**!PA**:       Get the number of COVID19 cases in state PA\n" +
+                    "**!centre**:    Get the number of COVID19 cases in Centre County, PA"
+            });
+        } else if (cmd == "cases") {
+            getCases(user, userID, channelID, message, evt, "US");
+        } else if (cmd == "center") {
+        } else if (cmd.length == 2) {
+            getCases(user, userID, channelID, message, evt, cmd.toUpperCase());
         }
     }
 });
