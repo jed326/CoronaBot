@@ -27,58 +27,123 @@ var bot = new Discord.Client({
     autorun: true
 });
 
-function getCases(user, userID, channelID, message, evt, loc) {
-    let date_ob = new Date();
-    let timestring =
-        ("0" + (date_ob.getMonth() + 1)).slice(-2) +
-        "-" +
-        ("0" + date_ob.getDate()).slice(-2) +
-        "-" +
-        date_ob.getFullYear() +
-        " " +
-        date_ob.getHours() +
-        ":" +
-        date_ob.getMinutes() +
-        ":" +
-        date_ob.getSeconds();
+function isState(loc) {
+    let states = [
+        "AL",
+        "AK",
+        "AS",
+        "AZ",
+        "AR",
+        "CA",
+        "CO",
+        "CT",
+        "DE",
+        "DC",
+        "FM",
+        "FL",
+        "GA",
+        "GU",
+        "HI",
+        "ID",
+        "IL",
+        "IN",
+        "IA",
+        "KS",
+        "KY",
+        "LA",
+        "ME",
+        "MH",
+        "MD",
+        "MA",
+        "MI",
+        "MN",
+        "MS",
+        "MO",
+        "MT",
+        "NE",
+        "NV",
+        "NH",
+        "NJ",
+        "NM",
+        "NY",
+        "NC",
+        "ND",
+        "MP",
+        "OH",
+        "OK",
+        "OR",
+        "PW",
+        "PA",
+        "PR",
+        "RI",
+        "SC",
+        "SD",
+        "TN",
+        "TX",
+        "UT",
+        "VT",
+        "VI",
+        "VA",
+        "WA",
+        "WV",
+        "WI",
+        "WY"
+    ];
+    return states.includes(loc);
+}
 
-    let route, index;
+function getCases(user, userID, channelID, message, evt, loc) {
+    let route;
 
     if (loc == "US") {
         route = "https://covidtracking.com/api/us";
-        index = 0;
     } else if (loc.length == 2) {
-        route = "https://covidtracking.com/api/states";
-        index = -1;
+        if (isState(loc)) {
+            route = `https://covidtracking.com/api/states?state=${loc}`;
+        } else {
+            bot.sendMessage({
+                to: channelID,
+                message: "Please use a valid 2-digit State Code"
+            });
+            return;
+        }
     }
 
     request(route, { json: true }, (err, res, body) => {
         if (err) {
             return logger.error(err);
         } else {
-            if (index == -1) {
-                // Maybe store this in a hash map instead of looping idk
-                var i;
-                for (i = 0; i < body.length; i++) {
-                    if (body[i].state == loc) {
-                        index = i;
-                        break;
-                    }
-                }
-                if (index == -1) {
-                    bot.sendMessage({
-                        to: channelID,
-                        message: "Please use a valid 2-digit State Code"
-                    });
-                    return;
-                }
+            let data, time;
+            if (loc == "US") {
+                data = body[0];
+                time = timestring;
+                let date_ob = new Date();
+                time =
+                    ("0" + (date_ob.getMonth() + 1)).slice(-2) +
+                    "-" +
+                    ("0" + date_ob.getDate()).slice(-2) +
+                    "-" +
+                    date_ob.getFullYear();
+            } else {
+                data = body;
+                let date_ob = new Date(data.dateModified);
+                time =
+                    ("0" + (date_ob.getMonth() + 1)).slice(-2) +
+                    "-" +
+                    ("0" + date_ob.getDate()).slice(-2) +
+                    "-" +
+                    date_ob.getFullYear() +
+                    " " +
+                    ("0" + date_ob.getHours()).slice(-2) +
+                    ":" +
+                    ("0" + date_ob.getMinutes()).slice(-2);
             }
-            var data = body[index];
+
             bot.sendMessage({
                 to: channelID,
                 message:
                     `...\n` +
-                    `As of ${timestring} there are **${data.positive}** positive COVID19 cases in ${loc}.` +
+                    `As of ${time} there are **${data.positive}** positive COVID19 cases in ${loc}.` +
                     ` **${data.totalTestResults}** tests have been performed.`
             });
         }
