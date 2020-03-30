@@ -301,14 +301,14 @@ bot.on("message", function(user, userID, channelID, message, evt) {
             getCases(user, userID, channelID, message, evt, "US");
         } else if (cmd.length == 2) {
             if ((cmd == "PA" || cmd == "pa") && args.length > 0) {
-                getPACountyCases(
-                    user,
-                    userID,
-                    channelID,
-                    message,
-                    evt,
-                    args[0]
-                );
+                // getPACountyCases(
+                //     user,
+                //     userID,
+                //     channelID,
+                //     message,
+                //     evt,
+                //     args[0]
+                // );
             } else {
                 getCases(
                     user,
