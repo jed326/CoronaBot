@@ -116,13 +116,17 @@ function getCases(user, userID, channelID, message, evt, loc) {
             let data, time;
             if (loc == "US") {
                 data = body[0];
-                let date_ob = new Date();
+                let date_ob = new Date(data.lastModified);
                 time =
                     ("0" + (date_ob.getMonth() + 1)).slice(-2) +
                     "-" +
                     ("0" + date_ob.getDate()).slice(-2) +
                     "-" +
-                    date_ob.getFullYear();
+                    date_ob.getFullYear() +
+                    " " +
+                    ("0" + (date_ob.getHours() - 4)).slice(-2) +
+                    ":" +
+                    ("0" + date_ob.getMinutes()).slice(-2);
             } else {
                 data = body;
                 let date_ob = new Date(data.dateModified);
