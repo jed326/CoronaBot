@@ -240,6 +240,7 @@ function getPACountyCases(user, userID, channelID, message, evt, loc) {
                 let time = dom.window.document
                     .getElementsByClassName("ms-rteStyle-Quote")[0]
                     .innerText.substring(
+                        // Getting an error on the line above
                         dom.window.document
                             .getElementsByClassName("ms-rteStyle-Quote")[0]
                             .innerText.search(" at ") + 4
@@ -296,12 +297,12 @@ bot.on("message", function(user, userID, channelID, message, evt) {
         var args = message.substring(1).split(" ");
         var cmd = args[0];
 
-        logger.info(args[0]);
-
         args = args.splice(1);
+
+        logger.info(cmd);
         logger.info(args);
 
-        // TODO: Center county cases
+        // TODO: Centre county cases
         // This should probably be a switch statement but I suck at coding
         if (cmd == "commands" || cmd == "help") {
             bot.sendMessage({
