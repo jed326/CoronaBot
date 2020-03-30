@@ -116,7 +116,6 @@ function getCases(user, userID, channelID, message, evt, loc) {
             let data, time;
             if (loc == "US") {
                 data = body[0];
-                time = timestring;
                 let date_ob = new Date();
                 time =
                     ("0" + (date_ob.getMonth() + 1)).slice(-2) +
