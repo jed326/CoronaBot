@@ -124,7 +124,7 @@ function getCases(user, userID, channelID, message, evt, loc) {
                     "-" +
                     date_ob.getFullYear() +
                     " " +
-                    ("0" + (date_ob.getHours() - 4)).slice(-2) +
+                    ("0" + date_ob.getHours()).slice(-2) +
                     ":" +
                     ("0" + date_ob.getMinutes()).slice(-2);
             } else {
@@ -137,7 +137,7 @@ function getCases(user, userID, channelID, message, evt, loc) {
                     "-" +
                     date_ob.getFullYear() +
                     " " +
-                    ("0" + (date_ob.getHours() - 4)).slice(-2) +
+                    ("0" + date_ob.getHours()).slice(-2) +
                     ":" +
                     ("0" + date_ob.getMinutes()).slice(-2);
             }
@@ -146,7 +146,7 @@ function getCases(user, userID, channelID, message, evt, loc) {
                 to: channelID,
                 message:
                     `...\n` +
-                    `As of ${time} there are **${data.positive}** positive COVID19 cases in ${loc}.` +
+                    `As of ${time} UTC there are **${data.positive}** positive COVID19 cases in ${loc}.` +
                     ` **${data.totalTestResults}** tests have been performed.`
             });
         }
