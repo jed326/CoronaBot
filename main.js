@@ -3,6 +3,7 @@ const logger = require("winston");
 const request = require("request");
 const jsdom = require("jsdom");
 const { JSDOM } = jsdom;
+const moment = require("moment-timezone");
 
 logger.remove(logger.transports.Console);
 logger.add(new logger.transports.Console(), {
@@ -186,40 +187,23 @@ function getCases(user, userID, channelID, message, evt, loc) {
             if (err) {
                 return logger.error(err);
             } else {
-                let data, time;
+                let data, date_ob;
                 if (loc == "US") {
                     data = body[0];
-                    let date_ob = new Date(data.lastModified);
-                    time =
-                        ("0" + (date_ob.getMonth() + 1)).slice(-2) +
-                        "-" +
-                        ("0" + date_ob.getDate()).slice(-2) +
-                        "-" +
-                        date_ob.getFullYear() +
-                        " " +
-                        ("0" + date_ob.getHours()).slice(-2) +
-                        ":" +
-                        ("0" + date_ob.getMinutes()).slice(-2);
+                    date_ob = new Date(data.lastModified);
                 } else {
                     data = body;
-                    let date_ob = new Date(data.dateModified);
-                    time =
-                        ("0" + (date_ob.getMonth() + 1)).slice(-2) +
-                        "-" +
-                        ("0" + date_ob.getDate()).slice(-2) +
-                        "-" +
-                        date_ob.getFullYear() +
-                        " " +
-                        ("0" + date_ob.getHours()).slice(-2) +
-                        ":" +
-                        ("0" + date_ob.getMinutes()).slice(-2);
+                    date_ob = new Date(data.dateModified);
                 }
+                time = moment(date_ob)
+                    .tz("America/New_York")
+                    .format("MMMM Do YYYY, h:mm a z");
 
                 bot.sendMessage({
                     to: channelID,
                     message:
                         `...\n` +
-                        `As of ${time} UTC there are **${data.positive}** positive COVID19 cases in ${loc}.` +
+                        `As of ${time} there are **${data.positive}** positive COVID19 cases in ${loc}.` +
                         ` **${data.totalTestResults}** tests have been performed.`
                 });
             }
@@ -240,6 +224,7 @@ function getPACountyCases(user, userID, channelID, message, evt, loc) {
                 let time = dom.window.document
                     .getElementsByClassName("ms-rteStyle-Quote")[0]
                     .innerText.substring(
+                        // Getting an error on the line above
                         dom.window.document
                             .getElementsByClassName("ms-rteStyle-Quote")[0]
                             .innerText.search(" at ") + 4
@@ -296,12 +281,12 @@ bot.on("message", function(user, userID, channelID, message, evt) {
         var args = message.substring(1).split(" ");
         var cmd = args[0];
 
-        logger.info(args[0]);
-
         args = args.splice(1);
+
+        logger.info(cmd);
         logger.info(args);
 
-        // TODO: Center county cases
+        // TODO: Centre county cases
         // This should probably be a switch statement but I suck at coding
         if (cmd == "commands" || cmd == "help") {
             bot.sendMessage({
@@ -315,18 +300,25 @@ bot.on("message", function(user, userID, channelID, message, evt) {
         } else if (cmd == "cases") {
             getCases(user, userID, channelID, message, evt, "US");
         } else if (cmd.length == 2) {
-            // if ((cmd == "PA" || cmd == "pa") && args.length > 0) {
-            //     getPACountyCases(
-            //         user,
-            //         userID,
-            //         channelID,
-            //         message,
-            //         evt,
-            //         args[0]
-            //     );
-            // } else {
-            getCases(user, userID, channelID, message, evt, cmd.toUpperCase());
-            // }
+            if ((cmd == "PA" || cmd == "pa") && args.length > 0) {
+                // getPACountyCases(
+                //     user,
+                //     userID,
+                //     channelID,
+                //     message,
+                //     evt,
+                //     args[0]
+                // );
+            } else {
+                getCases(
+                    user,
+                    userID,
+                    channelID,
+                    message,
+                    evt,
+                    cmd.toUpperCase()
+                );
+            }
         }
     }
 });
