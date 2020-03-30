@@ -134,7 +134,7 @@ function getCases(user, userID, channelID, message, evt, loc) {
                     "-" +
                     date_ob.getFullYear() +
                     " " +
-                    ("0" + date_ob.getHours()).slice(-2) +
+                    ("0" + (date_ob.getHours() - 4)).slice(-2) +
                     ":" +
                     ("0" + date_ob.getMinutes()).slice(-2);
             }
