@@ -10,6 +10,7 @@
     "author": "Jay Deng",
     "license": "ISC",
     "dependencies": {
+        "csv-parse": "^4.8.8",
         "discord.io": "https://github.com/woor/discord.io/tarball/gateway_v6",
         "jsdom": "^16.2.2",
         "moment-timezone": "^0.5.28",
