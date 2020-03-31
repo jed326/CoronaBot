@@ -1,0 +1,5 @@
+#ignore the auth.json file
+auth.json
+
+#ignore node_moules
+node_modules/
