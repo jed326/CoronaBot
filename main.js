@@ -122,10 +122,11 @@ function getWorldCases(user, userID, channelID, message, evt, loc) {
                         name: "Devinbot COVID Update",
                         icon_url: "https://i.imgur.com/Z52Zuj7.png"
                     },
+                    title: `${jhuData[i].Combined_Key} COVID19 Cases`,
                     description:
-                        `There are **${jhuData[i].Confirmed}** positive COVID19 cases in ${jhuData[i].Combined_Key}. ` +
-                        `\n**${jhuData[i].Deaths}** people have died.` +
-                        `\n**${jhuData[i].Recovered}** people have recovered.`,
+                        `**${jhuData[i].Confirmed}** positive cases` +
+                        `\n**${jhuData[i].Deaths}** deaths` +
+                        `\n**${jhuData[i].Recovered}** recovered`,
                     footer: {
                         text: `Last Updated ${time}.\nData from JHU`
                     }
@@ -175,10 +176,11 @@ function getWorldCases(user, userID, channelID, message, evt, loc) {
                     name: "Devinbot COVID Update",
                     icon_url: "https://i.imgur.com/Z52Zuj7.png"
                 },
+                title: `${loc} COVID19 Cases`,
                 description:
-                    `There are **${sum.Confirmed}** positive COVID19 cases in ${loc}. ` +
-                    `\n**${sum.Deaths}** people have died.` +
-                    `\n**${sum.Recovered}** people have recovered.`,
+                    `**${sum.Confirmed}** positive cases` +
+                    `\n**${sum.Deaths}** deaths` +
+                    `\n**${sum.Recovered}** recovered`,
                 footer: {
                     text: `Last Updated ${time}.\nData from JHU`
                 }
@@ -240,9 +242,10 @@ function getCases(user, userID, channelID, message, evt, loc) {
                             name: "Devinbot COVID Update",
                             icon_url: "https://i.imgur.com/Z52Zuj7.png"
                         },
+                        title: `${loc} COVID19 Cases`,
                         description:
-                            `**${data.positive}** positive COVID19 cases in ${loc}.` +
-                            `\n**${data.totalTestResults}** tests have been performed.`,
+                            `**${data.positive}** positive cases` +
+                            `\n**${data.totalTestResults}** tests performed`,
                         footer: {
                             text: `Last Updated ${time}.\nData from Covidtracking`
                         }
