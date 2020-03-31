@@ -201,10 +201,19 @@ function getCases(user, userID, channelID, message, evt, loc) {
 
                 bot.sendMessage({
                     to: channelID,
-                    message:
-                        `...\n` +
-                        `As of ${time} there are **${data.positive}** positive COVID19 cases in ${loc}.` +
-                        ` **${data.totalTestResults}** tests have been performed.`
+                    message: '',
+                    embed: {
+                        "color": 15158332,
+                        "author": {
+                          "name": "Devinbot COVID Update",
+                          "icon_url": "https://i.imgur.com/Z52Zuj7.png"
+                        },
+                        "description": `**${data.positive}** positive COVID19 cases in ${loc}.` +
+                        `\n**${data.totalTestResults}** tests have been performed.`,
+                        "footer": {
+                          "text": `Last Updated ${time}`
+                        }
+                    }
                 });
             }
         }
@@ -214,7 +223,6 @@ function getCases(user, userID, channelID, message, evt, loc) {
 function getPACountyCases(user, userID, channelID, message, evt, loc) {
     let route =
         "https://www.health.pa.gov/topics/disease/coronavirus/Pages/Cases.aspx";
-
     if (isPACounty(loc)) {
         request(route, function(err, response, body) {
             if (err) {
@@ -223,35 +231,48 @@ function getPACountyCases(user, userID, channelID, message, evt, loc) {
                 let dom = new JSDOM(body);
                 let time = dom.window.document
                     .getElementsByClassName("ms-rteStyle-Quote")[0]
-                    .innerText.substring(
+                    .textContent.substring(
                         // Getting an error on the line above
                         dom.window.document
                             .getElementsByClassName("ms-rteStyle-Quote")[0]
-                            .innerText.search(" at ") + 4
+                            .textContent.search(" at ") + 4
                     );
                 let list = dom.window.document.getElementsByTagName("tbody")[3]
                     .children;
                 let positve, dead;
                 for (var i = 1; i < list.length; i++) {
                     if (
-                        loc ==
+                        loc.toLowerCase() ==
                         dom.window.document
                             .getElementsByTagName("tbody")[3]
-                            .children[i].children[0].innerText.toLowerCase()
+                            .children[i].children[0].textContent.toLowerCase()
                     ) {
                         positive = dom.window.document.getElementsByTagName(
                             "tbody"
-                        )[3].children[i].children[1].innerText;
+                        )[3].children[i].children[1].textContent;
                         dead = dom.window.document.getElementsByTagName(
                             "tbody"
-                        )[3].children[i].children[2].innerText;
-                        dead = dead == "\n" ? "0" : dead;
+                        )[3].children[i].children[2].textContent;
+                        dead = dead == "" ? "0" : dead;
+                        loc = loc.
+                            charAt(0).toUpperCase() +
+                            loc.
+                              slice(1);
                         bot.sendMessage({
                             to: channelID,
-                            message:
-                                `...\n` +
-                                `As of ${time} EST there are **${positve}** positive COVID19 cases in ${loc} County, PA. ` +
-                                ` **${dead}** people have died.`
+                            message: '',
+                            embed: {
+                                "color": 15158332,
+                                "author": {
+                                  "name": "Devinbot COVID Update",
+                                  "icon_url": "https://i.imgur.com/Z52Zuj7.png"
+                                },
+                                "description": `There are **${positive}** positive COVID19 cases in ${loc} County, PA. ` +
+                                `\n**${dead}** people have died.`,
+                                "footer": {
+                                  "text": `Last Updated ${time} EDT`
+                                }
+                            }
                         });
                     }
                 }
@@ -291,24 +312,41 @@ bot.on("message", function(user, userID, channelID, message, evt) {
         if (cmd == "commands" || cmd == "help") {
             bot.sendMessage({
                 to: channelID,
-                message:
-                    "Here are the commands:\n" +
-                    "**!cases**:    Get the number of COVID19 cases in the USA\n" +
-                    "**!PA**:       Get the number of COVID19 cases in state PA\n" +
-                    "**!PA centre**:    Get the number of COVID19 cases in Centre County, PA"
+                message: '',
+                embed: {
+                    "color": 15158332,
+                    "author": {
+                      "name": "Devinbot Commands",
+                      "icon_url": "https://i.imgur.com/Z52Zuj7.png"
+                    },
+                    "fields": [
+                      {
+                        "name": "`!cases`",
+                        "value": "Get the number of COVID19 cases in the USA."
+                      },
+                      {
+                        "name": "`!PA`",
+                        "value": "Get the number of COVID19 cases in state PA. Other 2 letter state codes work as well."
+                      },
+                      {
+                        "name": "`!PA Centre`",
+                        "value": "Get the number of COVID19 cases in the Centre County, PA.\n*Only applicable to PA counties at the moment.*"
+                      }
+                    ]
+                }
             });
         } else if (cmd == "cases") {
             getCases(user, userID, channelID, message, evt, "US");
         } else if (cmd.length == 2) {
             if ((cmd == "PA" || cmd == "pa") && args.length > 0) {
-                // getPACountyCases(
-                //     user,
-                //     userID,
-                //     channelID,
-                //     message,
-                //     evt,
-                //     args[0]
-                // );
+                getPACountyCases(
+                    user,
+                    userID,
+                    channelID,
+                    message,
+                    evt,
+                    args[0]
+                );
             } else {
                 getCases(
                     user,
