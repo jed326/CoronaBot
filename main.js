@@ -1,10 +1,11 @@
 const Discord = require("discord.io");
 const logger = require("winston");
-const parse = require('csv-parse/lib/sync');
+const parse = require("csv-parse/lib/sync");
 const request = require("request");
 const jsdom = require("jsdom");
 const { JSDOM } = jsdom;
 const moment = require("moment-timezone");
+const labels = require("./lib/data/labels");
 
 logger.remove(logger.transports.Console);
 logger.add(new logger.transports.Console(), {
@@ -36,324 +37,160 @@ global.jhuData = [];
 global.jhuUpdate = -1;
 
 //helper to format date for JHU data
-function toURLDate(date){
-   return (((date.getMonth() + 1) < 10)? ('0' + (date.getMonth() + 1)): (date.getMonth() + 1)) +
-          '-' + (((date.getDate() + 1) < 10)? ('0' + (date.getDate() + 1)): (date.getDate() + 1)) + '-' + (date.getYear() + 1900);
+function toURLDate(date) {
+    return (
+        (date.getMonth() + 1 < 10
+            ? "0" + (date.getMonth() + 1)
+            : date.getMonth() + 1) +
+        "-" +
+        (date.getDate() + 1 < 10
+            ? "0" + (date.getDate() + 1)
+            : date.getDate() + 1) +
+        "-" +
+        (date.getYear() + 1900)
+    );
 }
 
 //function to update JHU data
 function updateJHUData(date) {
-  let dateStr = toURLDate(date);
-  let route = "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/" + dateStr + ".csv";
-  request(route, function(err, response, body) {
-
+    let dateStr = toURLDate(date);
+    let route =
+        "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/" +
+        dateStr +
+        ".csv";
+    request(route, function(err, response, body) {
         if (err) {
             return logger.error(err);
         } else {
-          if (body == '404: Not Found') {
-              // console.log("This date is " + date.toLocaleString() + ". Get yesterday's data.")
-              let dayBefore = new Date(date);
-              dayBefore.setDate(dayBefore.getDate() - 1);
-              updateJHUData(dayBefore);
-          } else {
-              jhuData = parse(body, {
-                columns: true,
-                skip_empty_lines: true
-              });
-              let now = new Date();
-              logger.info("Jhu data updated at: " + now.toLocaleString());
-          }
-      }
-   });
+            if (body == "404: Not Found") {
+                // console.log("This date is " + date.toLocaleString() + ". Get yesterday's data.")
+                let dayBefore = new Date(date);
+                dayBefore.setDate(dayBefore.getDate() - 1);
+                updateJHUData(dayBefore);
+            } else {
+                jhuData = parse(body, {
+                    columns: true,
+                    skip_empty_lines: true
+                });
+                let now = new Date();
+                logger.info("Jhu data updated at: " + now.toLocaleString());
+            }
+        }
+    });
 }
 
 function stateCodes2States(code) {
-  let codes = {
-      AK: "Alaska",
-      AL: "Alabama",
-      AR: "Arkansas",
-      AZ: ",Arizona",
-      CA: "California",
-      CO: "Colorado",
-      CT: "Connecticut",
-      DC: "Washington DC",
-      DE: "Delaware",
-      FL: "Florida",
-      GA: "Georgia",
-      GU: "Guam",
-      HI: "Hawaii",
-      IA: "Iowa",
-      ID: "Idaho",
-      IL: "Illinois",
-      IN: "Indiana",
-      KS: "Kansas",
-      KY: "Kentucky",
-      LA: "Louisiana",
-      MA: "Massachusetts",
-      MD: "Maryland",
-      ME: "Maine",
-      MI: "Michigan",
-      MN: "Minnesota",
-      MO: "Missouri",
-      MS: "Mississippi",
-      MT: "Montana",
-      NC: "North Carolina",
-      ND: "North Dakota",
-      NE: "Nebraska",
-      NH: "New Hampshire",
-      NJ: "New Jersey",
-      NM: "New Mexico",
-      NV: "Nevada",
-      NY: "New York",
-      OH: "Ohio",
-      OK: "Oklahoma",
-      OR: "Oregon",
-      PA: "Pennsylvania",
-      PR: "Puerto Rico",
-      RI: "Rhode Island",
-      SC: "South Carolina",
-      SD: "South Dakota",
-      TN: "Tennessee",
-      TX: "Texas",
-      UT: "Utah",
-      VA: "Virginia",
-      VI: "Virgin Islands",
-      VT: "Vermont",
-      WA: "Washington",
-      WI: "Wisconsin",
-      WV: "West Virginia",
-      WY: "Wyoming"
-  }
-  return codes[code];
+    return labels.stateCodes2States[code];
 }
 
 function isPACounty(loc) {
-    let counties = [
-        "adams",
-        "allegheny",
-        "armstrong",
-        "beaver",
-        "berks",
-        "blair",
-        "bradford",
-        "bucks",
-        "butler",
-        "cambria",
-        "cameron",
-        "carbon",
-        "centre",
-        "chester",
-        "clarion",
-        "clearfield",
-        "columbia",
-        "crawford",
-        "cumberland",
-        "dauphin",
-        "delaware",
-        "erie",
-        "fayette",
-        "franklin",
-        "greene",
-        "huntingdon",
-        "indiana",
-        "juniata",
-        "lackawanna",
-        "lancaster",
-        "lawrence",
-        "lebanon",
-        "lehigh",
-        "luzerne",
-        "lycoming",
-        "mckean",
-        "mercer",
-        "mifflin",
-        "monroe",
-        "montgomery",
-        "montour",
-        "northampton",
-        "northumberland",
-        "perry",
-        "philadelphia",
-        "pike",
-        "potter",
-        "schuylkill",
-        "snyder",
-        "somerset",
-        "susquehanna",
-        "tioga",
-        "union",
-        "venango",
-        "warren",
-        "washington",
-        "wayne",
-        "westmoreland",
-        "york"
-    ];
-    return counties.includes(loc.toLowerCase());
+    return labels.counties.includes(loc.toLowerCase());
 }
 
 function isState(loc) {
-    let states = [
-        "AL",
-        "AK",
-        "AS",
-        "AZ",
-        "AR",
-        "CA",
-        "CO",
-        "CT",
-        "DE",
-        "DC",
-        "FM",
-        "FL",
-        "GA",
-        "GU",
-        "HI",
-        "ID",
-        "IL",
-        "IN",
-        "IA",
-        "KS",
-        "KY",
-        "LA",
-        "ME",
-        "MH",
-        "MD",
-        "MA",
-        "MI",
-        "MN",
-        "MS",
-        "MO",
-        "MT",
-        "NE",
-        "NV",
-        "NH",
-        "NJ",
-        "NM",
-        "NY",
-        "NC",
-        "ND",
-        "MP",
-        "OH",
-        "OK",
-        "OR",
-        "PW",
-        "PA",
-        "PR",
-        "RI",
-        "SC",
-        "SD",
-        "TN",
-        "TX",
-        "UT",
-        "VT",
-        "VI",
-        "VA",
-        "WA",
-        "WV",
-        "WI",
-        "WY"
-    ];
-    return states.includes(loc.toUpperCase());
+    return labels.stateCodes.includes(loc.toUpperCase());
 }
 
 //get worldwide cases from jhuData
 function getWorldCases(user, userID, channelID, message, evt, loc) {
-
-  //fixing countries with common but 'malformed' names
-  if (loc.toLowerCase() == 'taiwan'){
-    loc = 'taiwan*';
-  } else if (loc.toLowerCase() == "korea"){
-    loc = "korea, south";
-  } else if (loc.toLowerCase() == "uk"){
-    loc = "united kingdom";
-  }
-  logger.info(loc + " for worldwide cases entered.")
-
-  for (var i = 0; i < jhuData.length; i++) {
-    if(loc.toLowerCase() == jhuData[i].Combined_Key.toLowerCase() ||
-        (loc + ', us').toLowerCase() == jhuData[i].Combined_Key.toLowerCase()) {
-
-      let date_ob = new Date(jhuData[i].Last_Update);
-      let time = moment(date_ob)
-          .tz("America/New_York")
-          .format("MMMM Do YYYY, h:mm a z");
-      bot.sendMessage({
-          to: channelID,
-          message: '',
-          embed: {
-              "color": 15158332,
-              "author": {
-                "name": "Devinbot COVID Update",
-                "icon_url": "https://i.imgur.com/Z52Zuj7.png"
-              },
-              "description": `There are **${jhuData[i].Confirmed}** positive COVID19 cases in ${jhuData[i].Combined_Key}. ` +
-              `\n**${jhuData[i].Deaths}** people have died.` +
-              `\n**${jhuData[i].Recovered}** people have recovered.`,
-              "footer": {
-                "text": `Last Updated ${time}.\nData from JHU`
-              }
-          }
-      });
-      return;
+    //fixing countries with common but 'malformed' names
+    if (loc.toLowerCase() == "taiwan") {
+        loc = "taiwan*";
+    } else if (loc.toLowerCase() == "korea") {
+        loc = "korea, south";
+    } else if (loc.toLowerCase() == "uk") {
+        loc = "united kingdom";
     }
-  }
-  if(loc.toLowerCase() == 'china' || loc.toLowerCase() == 'australia' || loc.toLowerCase() == 'canada') {
-    let sum = {
-      Confirmed: 0,
-      Deaths: 0,
-      Recovered: 0,
-      Last_Update: ''
-    };
+    logger.info(loc + " for worldwide cases entered.");
+
     for (var i = 0; i < jhuData.length; i++) {
-      if(loc.toLowerCase() == jhuData[i].Country_Region.toLowerCase()) {
-        sum.Confirmed += parseInt(jhuData[i].Confirmed, 10);
-        sum.Deaths += parseInt(jhuData[i].Deaths, 10);
-        sum.Recovered += parseInt(jhuData[i].Recovered, 10);
-        if (sum.Last_Update == '') {
-          sum.Last_Update = jhuData[i].Last_Update;
-        } else {
-          var a = new Date(sum.Last_Update);
-          var b = new Date(jhuData[i].Last_Update);
-          if (a > b) {
-            sum.Last_Update = jhuData[i].Last_Update;
-          }
+        if (
+            loc.toLowerCase() == jhuData[i].Combined_Key.toLowerCase() ||
+            (loc + ", us").toLowerCase() ==
+                jhuData[i].Combined_Key.toLowerCase()
+        ) {
+            let date_ob = new Date(jhuData[i].Last_Update);
+            let time = moment(date_ob)
+                .tz("America/New_York")
+                .format("MMMM Do YYYY, h:mm a z");
+            bot.sendMessage({
+                to: channelID,
+                message: "",
+                embed: {
+                    color: 15158332,
+                    author: {
+                        name: "Devinbot COVID Update",
+                        icon_url: "https://i.imgur.com/Z52Zuj7.png"
+                    },
+                    description:
+                        `There are **${jhuData[i].Confirmed}** positive COVID19 cases in ${jhuData[i].Combined_Key}. ` +
+                        `\n**${jhuData[i].Deaths}** people have died.` +
+                        `\n**${jhuData[i].Recovered}** people have recovered.`,
+                    footer: {
+                        text: `Last Updated ${time}.\nData from JHU`
+                    }
+                }
+            });
+            return;
         }
-      }
     }
-    let date_ob = new Date(sum.Last_Update);
-    let time = moment(date_ob)
-        .tz("America/New_York")
-        .format("MMMM Do YYYY, h:mm a z");
-    loc = loc.
-        charAt(0).toUpperCase() +
-        loc.
-          slice(1);
-    bot.sendMessage({
-        to: channelID,
-        message: '',
-        embed: {
-            "color": 15158332,
-            "author": {
-              "name": "Devinbot COVID Update",
-              "icon_url": "https://i.imgur.com/Z52Zuj7.png"
-            },
-            "description": `There are **${sum.Confirmed}** positive COVID19 cases in ${loc}. ` +
-            `\n**${sum.Deaths}** people have died.` +
-            `\n**${sum.Recovered}** people have recovered.`,
-            "footer": {
-              "text": `Last Updated ${time}.\nData from JHU`
+    if (
+        loc.toLowerCase() == "china" ||
+        loc.toLowerCase() == "australia" ||
+        loc.toLowerCase() == "canada"
+    ) {
+        let sum = {
+            Confirmed: 0,
+            Deaths: 0,
+            Recovered: 0,
+            Last_Update: ""
+        };
+        for (var i = 0; i < jhuData.length; i++) {
+            if (loc.toLowerCase() == jhuData[i].Country_Region.toLowerCase()) {
+                sum.Confirmed += parseInt(jhuData[i].Confirmed, 10);
+                sum.Deaths += parseInt(jhuData[i].Deaths, 10);
+                sum.Recovered += parseInt(jhuData[i].Recovered, 10);
+                if (sum.Last_Update == "") {
+                    sum.Last_Update = jhuData[i].Last_Update;
+                } else {
+                    var a = new Date(sum.Last_Update);
+                    var b = new Date(jhuData[i].Last_Update);
+                    if (a > b) {
+                        sum.Last_Update = jhuData[i].Last_Update;
+                    }
+                }
             }
         }
+        let date_ob = new Date(sum.Last_Update);
+        let time = moment(date_ob)
+            .tz("America/New_York")
+            .format("MMMM Do YYYY, h:mm a z");
+        loc = loc.charAt(0).toUpperCase() + loc.slice(1);
+        bot.sendMessage({
+            to: channelID,
+            message: "",
+            embed: {
+                color: 15158332,
+                author: {
+                    name: "Devinbot COVID Update",
+                    icon_url: "https://i.imgur.com/Z52Zuj7.png"
+                },
+                description:
+                    `There are **${sum.Confirmed}** positive COVID19 cases in ${loc}. ` +
+                    `\n**${sum.Deaths}** people have died.` +
+                    `\n**${sum.Recovered}** people have recovered.`,
+                footer: {
+                    text: `Last Updated ${time}.\nData from JHU`
+                }
+            }
+        });
+        return;
+    }
+    bot.sendMessage({
+        to: channelID,
+        message: "Please use a valid location"
     });
-    return;
-  }
-  bot.sendMessage({
-      to: channelID,
-      message: "Please use a valid location"
-  });
 }
-
 
 //Gets US cases from covid tracking
 function getCases(user, userID, channelID, message, evt, loc) {
@@ -396,17 +233,18 @@ function getCases(user, userID, channelID, message, evt, loc) {
 
                 bot.sendMessage({
                     to: channelID,
-                    message: '',
+                    message: "",
                     embed: {
-                        "color": 15158332,
-                        "author": {
-                          "name": "Devinbot COVID Update",
-                          "icon_url": "https://i.imgur.com/Z52Zuj7.png"
+                        color: 15158332,
+                        author: {
+                            name: "Devinbot COVID Update",
+                            icon_url: "https://i.imgur.com/Z52Zuj7.png"
                         },
-                        "description": `**${data.positive}** positive COVID19 cases in ${loc}.` +
-                        `\n**${data.totalTestResults}** tests have been performed.`,
-                        "footer": {
-                          "text": `Last Updated ${time}.\nData from Covidtracking`
+                        description:
+                            `**${data.positive}** positive COVID19 cases in ${loc}.` +
+                            `\n**${data.totalTestResults}** tests have been performed.`,
+                        footer: {
+                            text: `Last Updated ${time}.\nData from Covidtracking`
                         }
                     }
                 });
@@ -450,23 +288,21 @@ function getPACountyCases(user, userID, channelID, message, evt, loc) {
                             "tbody"
                         )[3].children[i].children[2].textContent;
                         dead = dead == "" ? "0" : dead;
-                        loc = loc.
-                            charAt(0).toUpperCase() +
-                            loc.
-                              slice(1);
+                        loc = loc.charAt(0).toUpperCase() + loc.slice(1);
                         bot.sendMessage({
                             to: channelID,
-                            message: '',
+                            message: "",
                             embed: {
-                                "color": 15158332,
-                                "author": {
-                                  "name": "Devinbot COVID Update",
-                                  "icon_url": "https://i.imgur.com/Z52Zuj7.png"
+                                color: 15158332,
+                                author: {
+                                    name: "Devinbot COVID Update",
+                                    icon_url: "https://i.imgur.com/Z52Zuj7.png"
                                 },
-                                "description": `There are **${positive}** positive COVID19 cases in ${loc} County, PA. ` +
-                                `\n**${dead}** people have died.`,
-                                "footer": {
-                                  "text": `Last Updated ${time} EDT`
+                                description:
+                                    `There are **${positive}** positive COVID19 cases in ${loc} County, PA. ` +
+                                    `\n**${dead}** people have died.`,
+                                footer: {
+                                    text: `Last Updated ${time} EDT`
                                 }
                             }
                         });
@@ -511,8 +347,8 @@ bot.on("message", function(user, userID, channelID, message, evt) {
         //Update JHUdata if haven't done so in 2 hours
         let now = new Date();
         if (now.getTime() - jhuUpdate > 7200000) {
-          updateJHUData(now);
-          jhuUpdate = now.getTime();
+            updateJHUData(now);
+            jhuUpdate = now.getTime();
         }
 
         // TODO: Centre county cases
@@ -520,37 +356,44 @@ bot.on("message", function(user, userID, channelID, message, evt) {
         if (cmd.toLowerCase() == "commands" || cmd.toLowerCase() == "help") {
             bot.sendMessage({
                 to: channelID,
-                message: '',
+                message: "",
                 embed: {
-                    "color": 15158332,
-                    "author": {
-                      "name": "Devinbot Commands",
-                      "icon_url": "https://i.imgur.com/Z52Zuj7.png"
+                    color: 15158332,
+                    author: {
+                        name: "Devinbot Commands",
+                        icon_url: "https://i.imgur.com/Z52Zuj7.png"
                     },
-                    "fields": [
-                      {
-                        "name": "`!US`",
-                        "value": "Get the number of COVID19 cases in the USA."
-                      },
-                      {
-                        "name": "`!country`",
-                        "value": "Get the number of COVID19 cases in *country*."
-                      },
-                      {
-                        "name": "`![2 letter state code]`",
-                        "value": "Get the number of COVID19 cases in *state*."
-                      },
-                      {
-                        "name": "`!county, state`",
-                        "value": "Get the number of COVID19 cases in *county, state* of the US.\n2 letter state codes work here as well."
-                      },
-                      {
-                        "name": "`!region, country`",
-                        "value": "Get the number of COVID19 cases in *region, country*."
-                      }
+                    fields: [
+                        {
+                            name: "`!US`",
+                            value: "Get the number of COVID19 cases in the USA."
+                        },
+                        {
+                            name: "`!country`",
+                            value:
+                                "Get the number of COVID19 cases in *country*."
+                        },
+                        {
+                            name: "`![2 letter state code]`",
+                            value: "Get the number of COVID19 cases in *state*."
+                        },
+                        {
+                            name: "`!county, state`",
+                            value:
+                                "Get the number of COVID19 cases in *county, state* of the US.\n2 letter state codes work here as well."
+                        },
+                        {
+                            name: "`!region, country`",
+                            value:
+                                "Get the number of COVID19 cases in *region, country*."
+                        }
                     ],
-                    "footer": {
-                      "text": 'This bot was last started ' + moment(startTime).tz("America/New_York").format("MMMM Do YYYY, h:mm a z")
+                    footer: {
+                        text:
+                            "This bot was last started " +
+                            moment(startTime)
+                                .tz("America/New_York")
+                                .format("MMMM Do YYYY, h:mm a z")
                     }
                 }
             });
@@ -568,30 +411,23 @@ bot.on("message", function(user, userID, channelID, message, evt) {
             //         args[0]
             //     );
             // } else {
-                getCases(
-                    user,
-                    userID,
-                    channelID,
-                    message,
-                    evt,
-                    cmd.toUpperCase()
-                );
+            getCases(user, userID, channelID, message, evt, cmd.toUpperCase());
             // }
-        } else{
-          if (args.length != 0 && isState(args[0])) {
-            args[0] = stateCodes2States(args[0].toUpperCase()) + ',';
-            if (args[1] == undefined) {
-              args.push('US');
+        } else {
+            if (args.length != 0 && isState(args[0])) {
+                args[0] = stateCodes2States(args[0].toUpperCase()) + ",";
+                if (args[1] == undefined) {
+                    args.push("US");
+                }
             }
-          }
-          getWorldCases(
-              user,
-              userID,
-              channelID,
-              message,
-              evt,
-              cmd + ((args.length == 0)? '': (' ' + args.join(' ')))
-          );
+            getWorldCases(
+                user,
+                userID,
+                channelID,
+                message,
+                evt,
+                cmd + (args.length == 0 ? "" : " " + args.join(" "))
+            );
         }
     }
 });
