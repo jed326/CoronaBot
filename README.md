@@ -26,7 +26,7 @@ node main.js
 | `!help`  | Show help message. |
 | `!cases` | Displays the worldwide case number. |
 | `!source`| Links the sources for the bot and the source code. |
-| `!corona US` | Number of cases in the US. | covidtracking |
+| `!corona US` or `!US`| Number of cases in the US. | covidtracking |
 | `!corona`*`country`*| Number of cases in *country*.| JHU |
 | `!corona`*`state`*| Number of cases in *state*. 2 Letter state codes work here as well.| covidtracking |
 | `!corona`*`county, state`*| Number of cases in *country*.| JHU |
@@ -35,3 +35,8 @@ node main.js
 ## Data sources
 - US and state data comes from: [Covidtracking](https://covidtracking.com/data/)
 - Worldwide and county data is from [JHU CSSE](https://github.com/CSSEGISandData/COVID-19)
+
+## Disclaimer
+There are some pretty hack and wack stuff in here. Like parsing the JHU data straight from github.
+Also we don't control the data and often times covidtracking and JHU don't have the same numbers.
+¯\\\_(ツ)\_/¯
