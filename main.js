@@ -312,36 +312,26 @@ function getCases(user, userID, channelID, message, evt, loc) {
 }
 
 function graphHistory(user, userID, channelID, message, evt, loc) {
-    let route;
-
-    if (loc == "US") {
-        route = "https://covidtracking.com/api/us/daily";
-    } else if (loc.length == 2) {
-        if (isState(loc)) {
-            route = `https://covidtracking.com/api/states/daily?state=${loc}`;
-        } else {
+    let states = loc.split(" ");
+    let i;
+    for (i = 0; i < states.length; i++) {
+        let code = states[i];
+        if (!isState(code) && states[i] != "US") {
             bot.sendMessage({
                 to: channelID,
-                message: "Please use a valid 2-digit State Code",
+                message: "Please use only valid 2-digit State Code",
             });
             return;
         }
     }
 
-    request(route, { json: true }, (err, res, body) => {
-        if (err) {
-            return logger.error(err);
-        } else {
-            let process = exec("python3", ["./graph.py", JSON.stringify(body)]);
-            process.stdout.on("data", function (data) {
-                // logger.info(body);
-                logger.info(data.toString());
-                bot.uploadFile({
-                    to: channelID,
-                    file: "./history.png",
-                });
-            });
-        }
+    let process = exec("python3", ["./graph.py", loc]);
+    process.stdout.on("data", function (data) {
+        logger.info(data.toString());
+        bot.uploadFile({
+            to: channelID,
+            file: "./history.png",
+        });
     });
 }
 
@@ -500,16 +490,14 @@ bot.on("message", function (user, userID, channelID, message, evt) {
                 },
             });
         } else if (cmd.toLowerCase() == "history") {
-            if (arg.length == 2) {
-                graphHistory(
-                    user,
-                    userID,
-                    channelID,
-                    message,
-                    evt,
-                    arg.toUpperCase()
-                );
-            }
+            graphHistory(
+                user,
+                userID,
+                channelID,
+                message,
+                evt,
+                arg.toUpperCase()
+            );
         }
     }
 });
