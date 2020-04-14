@@ -6,19 +6,21 @@ const jsdom = require("jsdom");
 const { JSDOM } = jsdom;
 const moment = require("moment-timezone");
 const labels = require("./lib/data/labels");
+const exec = require("child_process").spawn;
 
 logger.remove(logger.transports.Console);
 logger.add(new logger.transports.Console(), {
-    colorize: true
+    colorize: true,
 });
 logger.level = "debug";
 
-let bot_token;
+let bot_token, remote;
 
 // Checks if there's an environmental variable configured.
 // Super hack shit I know D:
 if (process.env.BOT_TOKEN) {
     bot_token = process.env.BOT_TOKEN;
+    remote = true;
 } else {
     bot_token = require("./auth.json").token;
 }
@@ -29,7 +31,7 @@ var bot = new Discord.Client({
     // token: process.env.BOT_TOKEN,
     // token: auth.token,
     token: bot_token,
-    autorun: true
+    autorun: true,
 });
 
 //initialize global vars for jhudata
@@ -43,9 +45,7 @@ function toURLDate(date) {
             ? "0" + (date.getMonth() + 1)
             : date.getMonth() + 1) +
         "-" +
-        (date.getDate() + 1 < 10
-            ? "0" + (date.getDate())
-            : date.getDate()) +
+        (date.getDate() + 1 < 10 ? "0" + date.getDate() : date.getDate()) +
         "-" +
         (date.getYear() + 1900)
     );
@@ -59,7 +59,7 @@ function updateJHUData(date) {
         dateStr +
         ".csv";
     logger.info("Attempting to load JHUData from " + route);
-    request(route, function(err, response, body) {
+    request(route, function (err, response, body) {
         if (err) {
             return logger.error(err);
         } else {
@@ -70,7 +70,7 @@ function updateJHUData(date) {
             } else {
                 jhuData = parse(body, {
                     columns: true,
-                    skip_empty_lines: true
+                    skip_empty_lines: true,
                 });
                 let now = new Date();
                 logger.info("Jhu data updated at: " + now.toLocaleString());
@@ -88,7 +88,7 @@ function stateCodes2States(code) {
 //takes in state name, return state code
 //no check done, use isState to check resulting output
 function states2StateCodes(state) {
-  return labels.states2StateCodes[state];
+    return labels.states2StateCodes[state];
 }
 
 //checks if input is valid 2 letter state code
@@ -106,7 +106,7 @@ function getWorldCases(user, userID, channelID, message, evt, loc) {
     } else if (loc.toLowerCase() == "uk") {
         loc = "united kingdom";
     } else if (loc.toLowerCase() == "united states") {
-        loc = "us"
+        loc = "us";
     }
     logger.info(loc + " for worldwide cases entered.");
 
@@ -127,7 +127,7 @@ function getWorldCases(user, userID, channelID, message, evt, loc) {
                     color: 15158332,
                     author: {
                         name: "Devinbot COVID Update",
-                        icon_url: "https://i.imgur.com/Z52Zuj7.png"
+                        icon_url: "https://i.imgur.com/Z52Zuj7.png",
                     },
                     title: `${jhuData[i].Combined_Key}`,
                     description:
@@ -135,9 +135,9 @@ function getWorldCases(user, userID, channelID, message, evt, loc) {
                         `\n**${jhuData[i].Deaths}** deaths` +
                         `\n**${jhuData[i].Recovered}** recovered`,
                     footer: {
-                        text: `Last Updated ${time}.\nData from JHU`
-                    }
-                }
+                        text: `Last Updated ${time}.\nData from JHU`,
+                    },
+                },
             });
             return;
         }
@@ -152,7 +152,7 @@ function getWorldCases(user, userID, channelID, message, evt, loc) {
             Confirmed: 0,
             Deaths: 0,
             Recovered: 0,
-            Last_Update: ""
+            Last_Update: "",
         };
         for (var i = 0; i < jhuData.length; i++) {
             if (loc.toLowerCase() == jhuData[i].Country_Region.toLowerCase()) {
@@ -182,7 +182,7 @@ function getWorldCases(user, userID, channelID, message, evt, loc) {
                 color: 15158332,
                 author: {
                     name: "Devinbot COVID Update",
-                    icon_url: "https://i.imgur.com/Z52Zuj7.png"
+                    icon_url: "https://i.imgur.com/Z52Zuj7.png",
                 },
                 title: `${loc}`,
                 description:
@@ -190,63 +190,63 @@ function getWorldCases(user, userID, channelID, message, evt, loc) {
                     `\n**${sum.Deaths}** deaths` +
                     `\n**${sum.Recovered}** recovered`,
                 footer: {
-                    text: `Last Updated ${time}.\nData from JHU`
-                }
-            }
+                    text: `Last Updated ${time}.\nData from JHU`,
+                },
+            },
         });
         return;
     }
     bot.sendMessage({
         to: channelID,
-        message: "Please use a valid location"
+        message: "Please use a valid location",
     });
 }
 
 //get the world total number of cases from jhuData
 function worldTotal(user, userID, channelID, message, evt) {
-  let sum = {
-      Confirmed: 0,
-      Deaths: 0,
-      Recovered: 0,
-      Last_Update: ""
-  };
-  for (var i = 0; i < jhuData.length; i++) {
-      sum.Confirmed += parseInt(jhuData[i].Confirmed, 10);
-      sum.Deaths += parseInt(jhuData[i].Deaths, 10);
-      sum.Recovered += parseInt(jhuData[i].Recovered, 10);
-      if (sum.Last_Update == "") {
-          sum.Last_Update = jhuData[i].Last_Update;
-      } else {
-          var a = new Date(sum.Last_Update);
-          var b = new Date(jhuData[i].Last_Update);
-          if (a < b) {
-              sum.Last_Update = jhuData[i].Last_Update;
-          }
-      }
-  }
-  let date_ob = new Date(sum.Last_Update);
-  let time = moment(date_ob)
-      .tz("America/New_York")
-      .format("MMMM Do YYYY, h:mm a z");
-  bot.sendMessage({
-      to: channelID,
-      message: "",
-      embed: {
-          color: 15158332,
-          author: {
-              name: "Devinbot COVID Update",
-              icon_url: "https://i.imgur.com/Z52Zuj7.png"
-          },
-          title: `Worldwide Case Numbers`,
-          description:
-              `**${sum.Confirmed}** positive cases` +
-              `\n**${sum.Deaths}** deaths` +
-              `\n**${sum.Recovered}** recovered`,
-          footer: {
-              text: `Last Updated ${time}.\nData from JHU`
-          }
-      }
-  });
+    let sum = {
+        Confirmed: 0,
+        Deaths: 0,
+        Recovered: 0,
+        Last_Update: "",
+    };
+    for (var i = 0; i < jhuData.length; i++) {
+        sum.Confirmed += parseInt(jhuData[i].Confirmed, 10);
+        sum.Deaths += parseInt(jhuData[i].Deaths, 10);
+        sum.Recovered += parseInt(jhuData[i].Recovered, 10);
+        if (sum.Last_Update == "") {
+            sum.Last_Update = jhuData[i].Last_Update;
+        } else {
+            var a = new Date(sum.Last_Update);
+            var b = new Date(jhuData[i].Last_Update);
+            if (a < b) {
+                sum.Last_Update = jhuData[i].Last_Update;
+            }
+        }
+    }
+    let date_ob = new Date(sum.Last_Update);
+    let time = moment(date_ob)
+        .tz("America/New_York")
+        .format("MMMM Do YYYY, h:mm a z");
+    bot.sendMessage({
+        to: channelID,
+        message: "",
+        embed: {
+            color: 15158332,
+            author: {
+                name: "Devinbot COVID Update",
+                icon_url: "https://i.imgur.com/Z52Zuj7.png",
+            },
+            title: `Worldwide Case Numbers`,
+            description:
+                `**${sum.Confirmed}** positive cases` +
+                `\n**${sum.Deaths}** deaths` +
+                `\n**${sum.Recovered}** recovered`,
+            footer: {
+                text: `Last Updated ${time}.\nData from JHU`,
+            },
+        },
+    });
 }
 
 //Gets US cases from covid tracking
@@ -261,7 +261,7 @@ function getCases(user, userID, channelID, message, evt, loc) {
         } else {
             bot.sendMessage({
                 to: channelID,
-                message: "Please use a valid 2-digit State Code"
+                message: "Please use a valid 2-digit State Code",
             });
             return;
         }
@@ -270,7 +270,7 @@ function getCases(user, userID, channelID, message, evt, loc) {
     request(
         route,
         {
-            json: true
+            json: true,
         },
         (err, res, body) => {
             if (err) {
@@ -295,27 +295,50 @@ function getCases(user, userID, channelID, message, evt, loc) {
                         color: 15158332,
                         author: {
                             name: "Devinbot COVID Update",
-                            icon_url: "https://i.imgur.com/Z52Zuj7.png"
+                            icon_url: "https://i.imgur.com/Z52Zuj7.png",
                         },
                         title: `${loc}`,
                         description:
                             `**${data.positive}** positive cases` +
                             `\n**${data.totalTestResults}** tests performed`,
                         footer: {
-                            text: `Last Updated ${time}.\nData from Covidtracking`
-                        }
-                    }
+                            text: `Last Updated ${time}.\nData from Covidtracking`,
+                        },
+                    },
                 });
             }
         }
     );
 }
 
+function graphHistory(user, userID, channelID, message, evt, loc) {
+    let states = loc.split(" ");
+    let i;
+    for (i = 0; i < states.length; i++) {
+        let code = states[i];
+        if (!isState(code) && states[i] != "US") {
+            bot.sendMessage({
+                to: channelID,
+                message: "Please use only valid 2-digit State Code",
+            });
+            return;
+        }
+    }
+
+    let process = exec("python3", ["./graph.py", loc]);
+    process.stdout.on("data", function (data) {
+        logger.info(data.toString());
+        bot.uploadFile({
+            to: channelID,
+            file: "./history.png",
+        });
+    });
+}
 
 global.startTime; //declare global start time variable
 
 //bot is on
-bot.on("ready", function(evt) {
+bot.on("ready", function (evt) {
     logger.info("Connected");
     logger.info("Logged in as: ");
     logger.info(bot.username + " - (" + bot.id + ")");
@@ -326,8 +349,8 @@ bot.on("ready", function(evt) {
 });
 
 //bot receives a message
-bot.on("message", function(user, userID, channelID, message, evt) {
-    if (user == "CoronaBot") {
+bot.on("message", function (user, userID, channelID, message, evt) {
+    if (user == "CoronaBot" || (remote && channelID == "693882023164641313")) {
         return;
     }
 
@@ -358,93 +381,123 @@ bot.on("message", function(user, userID, channelID, message, evt) {
                     color: 15158332,
                     author: {
                         name: "Devinbot Commands",
-                        icon_url: "https://i.imgur.com/Z52Zuj7.png"
+                        icon_url: "https://i.imgur.com/Z52Zuj7.png",
                     },
                     fields: [
-                      {
-                        name: "`!help`",
-                        value: "How you got here..."
-                      },
-                      {
-                        name: "`!cases`",
-                        value: "Displays the worldwide case number."
-                      },
-                      {
-                        name: "`!source`",
-                        value: "Links the sources for the bot and the source code."
-                      },
-                      {
-                       name: "\n\n!corona commands",
-                       value: "`!corona US`\n\n`!corona`*`country`*\n\n`!corona`*`state`*\n\n`!corona`*`county, state`*\n\n`!corona`*`region, country`*",
-                       inline: true
-                      },
-                      {
-                       name: "\n\nReturns",
-                       value: "Number of cases in the *`US`*.\n\nNumber of cases in *`country`*.\n\nNumber of cases in *`state`*.\n\nNumber of cases in *`county, state`*\n\nNumber of cases in *`region, country`*",
-                       inline: true
-                      }
+                        {
+                            name: "`!help`",
+                            value: "How you got here...",
+                        },
+                        {
+                            name: "`!cases`",
+                            value: "Displays the worldwide case number.",
+                        },
+                        {
+                            name: "`!source`",
+                            value:
+                                "Links the sources for the bot and the source code.",
+                        },
+                        {
+                            name: "\n\n!corona commands",
+                            value:
+                                "`!corona US`\n\n`!corona`*`country`*\n\n`!corona`*`state`*\n\n`!corona`*`county, state`*\n\n`!corona`*`region, country`*",
+                            inline: true,
+                        },
+                        {
+                            name: "\n\nReturns",
+                            value:
+                                "Number of cases in the *`US`*.\n\nNumber of cases in *`country`*.\n\nNumber of cases in *`state`*.\n\nNumber of cases in *`county, state`*\n\nNumber of cases in *`region, country`*",
+                            inline: true,
+                        },
                     ],
                     footer: {
                         text:
                             "This bot was last started " +
                             moment(startTime)
                                 .tz("America/New_York")
-                                .format("MMMM Do YYYY, h:mm a z")
-                    }
-                }
+                                .format("MMMM Do YYYY, h:mm a z"),
+                    },
+                },
             });
-        } else if (cmd.toLowerCase() == "cases"){
-              worldTotal(user, userID, channelID, message, evt);
-        } else if (cmd.toLowerCase() == "us"){
-              getCases(user, userID, channelID, message, evt, 'US');
+        } else if (cmd.toLowerCase() == "cases") {
+            worldTotal(user, userID, channelID, message, evt);
+        } else if (cmd.toLowerCase() == "us") {
+            getCases(user, userID, channelID, message, evt, "US");
         } else if (cmd.toLowerCase() == "corona") {
-           if (arg.length == 2) {
-              getCases(user, userID, channelID, message, evt, arg.toUpperCase());
-          } else {
-              if (states2StateCodes(arg.toLowerCase()) != undefined) {
-                getCases(user, userID, channelID, message, evt, states2StateCodes(arg.toLowerCase()));
-              } else {
-                args = arg.split(', ');
-                if (args.length != 0) {
-                    for (var i = 0; i < args.length; i++){
-                      if (isState(args[i])) {
-                        args[i] = stateCodes2States(args[i].toUpperCase()) ;
-                      }
-                    }
-                }
-                getWorldCases(
+            if (arg.length == 2) {
+                getCases(
                     user,
                     userID,
                     channelID,
                     message,
                     evt,
-                    args.length == 0 ? "" : args.join(", ")
+                    arg.toUpperCase()
                 );
-             }
-          }
-        } else if (cmd.toLowerCase() == "source" || cmd.toLowerCase() == "sources") {
-          bot.sendMessage({
-              to: channelID,
-              message: "",
-              embed: {
-                  color: 15158332,
-                  author: {
-                      name: "Devinbot COVID Update",
-                      icon_url: "https://i.imgur.com/Z52Zuj7.png"
-                  },
-                  title:
-                      'Sources',
-                  description:
-                      "[John Hopkins University CSSE](https://github.com/CSSEGISandData/COVID-19)\n\n[Covidtracking](https://covidtracking.com/)\n\n[This bot\'s source code](https://github.com/jed326/CoronaBot)",
-                  footer: {
-                      text:
-                          "This bot was last started " +
-                          moment(startTime)
-                              .tz("America/New_York")
-                              .format("MMMM Do YYYY, h:mm a z")
-                  }
-              }
-          });
+            } else {
+                if (states2StateCodes(arg.toLowerCase()) != undefined) {
+                    getCases(
+                        user,
+                        userID,
+                        channelID,
+                        message,
+                        evt,
+                        states2StateCodes(arg.toLowerCase())
+                    );
+                } else {
+                    args = arg.split(", ");
+                    if (args.length != 0) {
+                        for (var i = 0; i < args.length; i++) {
+                            if (isState(args[i])) {
+                                args[i] = stateCodes2States(
+                                    args[i].toUpperCase()
+                                );
+                            }
+                        }
+                    }
+                    getWorldCases(
+                        user,
+                        userID,
+                        channelID,
+                        message,
+                        evt,
+                        args.length == 0 ? "" : args.join(", ")
+                    );
+                }
+            }
+        } else if (
+            cmd.toLowerCase() == "source" ||
+            cmd.toLowerCase() == "sources"
+        ) {
+            bot.sendMessage({
+                to: channelID,
+                message: "",
+                embed: {
+                    color: 15158332,
+                    author: {
+                        name: "Devinbot COVID Update",
+                        icon_url: "https://i.imgur.com/Z52Zuj7.png",
+                    },
+                    title: "Sources",
+                    description:
+                        "[John Hopkins University CSSE](https://github.com/CSSEGISandData/COVID-19)\n\n[Covidtracking](https://covidtracking.com/)\n\n[This bot's source code](https://github.com/jed326/CoronaBot)",
+                    footer: {
+                        text:
+                            "This bot was last started " +
+                            moment(startTime)
+                                .tz("America/New_York")
+                                .format("MMMM Do YYYY, h:mm a z"),
+                    },
+                },
+            });
+        } else if (cmd.toLowerCase() == "history") {
+            graphHistory(
+                user,
+                userID,
+                channelID,
+                message,
+                evt,
+                arg.toUpperCase()
+            );
         }
     }
 });
