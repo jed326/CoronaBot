@@ -31,6 +31,9 @@ node main.js
 | `!corona`*`state`*| Number of cases in *state*. 2 Letter state codes work here as well.| covidtracking |
 | `!corona`*`county, state`*| Number of cases in *country*.| JHU |
 | `!corona`*`region, country`*| Number of cases in *country*. Only has region data for certain countries.| JHU |
+| `!history US`| Returns graph of history of cases in the US| Covidtracking |
+| `!history`*`state`*| Returns graph of history cases in *state*. Accepts multiple states as arguments. **Use state codes.**| Covidtracking |
+
 
 ## Data sources
 - US and state data comes from: [Covidtracking](https://covidtracking.com/data/)
