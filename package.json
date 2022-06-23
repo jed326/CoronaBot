@@ -13,7 +13,7 @@
         "child_process": "^1.0.2",
         "csv-parse": "^4.8.8",
         "discord.io": "https://github.com/woor/discord.io/tarball/gateway_v6",
-        "jsdom": "^16.2.2",
+        "jsdom": "^16.5.0",
         "moment-timezone": "^0.5.28",
         "request": "^2.88.2",
         "winston": "^3.2.1"
